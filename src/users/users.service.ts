@@ -8,25 +8,41 @@ import {
 import { LoginInput, LoginOutput } from './dtos/login.dto';
 import { User } from './entities/user.entity';
 import { UserProfileOutput } from './dtos/user-profile.dto';
+import { JwtService } from 'src/jwt/jwt.service';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User) private readonly users: Repository<User>,
+    private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
   ) {}
 
   async createAccount({
     email,
     password,
+    nickname,
   }: CreateAccountInput): Promise<CreateAccountOutput> {
     try {
-      const exists = await this.users.findOne({ email });
-      if (exists) {
-        return { ok: false, error: 'There is a user with that email already' };
+      const emailExists = await this.users.findOne({ email });
+      if (emailExists) {
+        return {
+          ok: false,
+          error: 'There is a user with that email already',
+        };
+      }
+      const nicknameExists = await this.users.findOne({ nickname });
+      if (nicknameExists) {
+        return {
+          ok: false,
+          error: 'There is a user with that nickname already',
+        };
       }
       const user = await this.users.save(
-        this.users.create({ email, password }),
+        this.users.create({ email, password, nickname }),
       );
+      this.mailService.sendVerificationEmail(user.email);
       return { ok: true };
     } catch (e) {
       return { ok: false, error: "Couldn't create account" };
@@ -52,6 +68,11 @@ export class UsersService {
           error: 'Wrong password',
         };
       }
+      const token = this.jwtService.sign(user.id);
+      return {
+        ok: true,
+        token,
+      };
     } catch (error) {
       return {
         ok: false,

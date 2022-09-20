@@ -1,9 +1,21 @@
-import { Field, InputType, ObjectType } from '@nestjs/graphql';
+import {
+  Field,
+  InputType,
+  ObjectType,
+  registerEnumType,
+} from '@nestjs/graphql';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { InternalServerErrorException } from '@nestjs/common';
 import { IsBoolean, IsEmail, IsString } from 'class-validator';
+
+export enum UserRole {
+  Player = 'Player',
+  Admin = 'Admin',
+}
+
+registerEnumType(UserRole, { name: 'UserRole' });
 
 @InputType('UserInputType', { isAbstract: true })
 @ObjectType()
@@ -18,6 +30,11 @@ export class User extends CoreEntity {
   @Field(type => String)
   @IsString()
   password: string;
+
+  @Column({ unique: true })
+  @Field(type => String)
+  @IsString()
+  nickname: string;
 
   @Column({ default: false })
   @Field(type => Boolean)

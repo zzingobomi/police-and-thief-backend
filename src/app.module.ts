@@ -8,6 +8,10 @@ import { AppService } from './app.service';
 import { User } from './users/entities/user.entity';
 import { CommonModule } from './common/common.module';
 import { UsersModule } from './users/users.module';
+import { JwtModule } from './jwt/jwt.module';
+import { AuthModule } from './auth/auth.module';
+import { MailModule } from './mail/mail.module';
+import { MailerModule } from '@nestjs-modules/mailer';
 
 @Module({
   imports: [
@@ -48,6 +52,19 @@ import { UsersModule } from './users/users.module';
         };
       },
     }),
+    JwtModule.forRoot({
+      privateKey: process.env.PRIVATE_KEY,
+    }),
+    MailerModule.forRoot({
+      transport: `smtps://${process.env.MAILER_FROM_EMAIL}:${process.env.MAILER_PASSWORD}@${process.env.MAILER_HOST}`,
+      defaults: {
+        from: `"No Reply" <${process.env.MAILER_FROM_EMAIL}}>`,
+      },
+    }),
+    MailModule.forRoot({
+      fromEmail: process.env.MAILER_FROM_EMAIL,
+    }),
+    AuthModule,
     UsersModule,
     CommonModule,
   ],
